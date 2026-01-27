@@ -9,9 +9,9 @@
         body { font-family: -apple-system, system-ui, sans-serif; text-align: center; background: #f0f2f5; margin: 0; padding: 15px; touch-action: manipulation; }
         .container { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 20px; box-shadow: 0 8px 30px rgba(0,0,0,0.1); }
         
-        /* Khu vực tương tác */
-        .work-area { position: relative; width: 100%; aspect-ratio: 1/1; background: #333; margin: 15px 0; border-radius: 12px; overflow: hidden; cursor: move; touch-action: none; }
-        #userImage { position: absolute; top: 0; left: 0; transform-origin: top left; cursor: move; }
+        /* Khu vực căn chỉnh */
+        .work-area { position: relative; width: 100%; aspect-ratio: 1/1; background: #333; margin: 15px 0; border-radius: 12px; overflow: hidden; touch-action: none; }
+        #userImage { position: absolute; top: 0; left: 0; transform-origin: top left; }
         #frameOverlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; }
 
         .controls { background: #f9f9f9; padding: 15px; border-radius: 12px; margin-bottom: 15px; }
@@ -19,18 +19,27 @@
         input[type="range"] { flex: 1; accent-color: var(--primary); }
 
         .btn-group { display: flex; flex-direction: column; gap: 10px; }
-        .btn { background: var(--primary); color: white; padding: 15px; border: none; border-radius: 30px; cursor: pointer; text-decoration: none; font-weight: bold; font-size: 16px; }
+        .btn { background: var(--primary); color: white; padding: 15px; border: none; border-radius: 30px; cursor: pointer; text-decoration: none; font-weight: bold; font-size: 16px; -webkit-appearance: none; }
         .btn-secondary { background: #eee; color: #333; border: 1px solid #ccc; }
         
+        /* Khu vực kết quả tối ưu cho iPhone */
+        .result-container { position: relative; width: 100%; margin-top: 20px; display: none; }
+        #finalResult { width: 100%; border-radius: 12px; display: block; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+        
+        /* Lớp phủ tàng hình để iPhone chỉ nhận diện lệnh LƯU ẢNH */
+        .save-overlay { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            z-index: 999; opacity: 0; -webkit-touch-callout: default; 
+        }
+
         canvas { display: none; }
-        #finalResult { width: 100%; border-radius: 12px; display: none; margin-top: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+        .tip { color: #d9534f; font-size: 14px; margin-top: 15px; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2 style="color:var(--primary); margin:0 0 10px 0;">50 NĂM DALATTOURIST</h2>
-    <p style="font-size: 14px; color: #666;">Chọn ảnh -> Kéo & Phóng to để căn chỉnh</p>
+    <h2 style="color:var(--primary); margin-bottom:10px;">50 NĂM DALATTOURIST</h2>
 
     <div class="work-area" id="workArea">
         <img id="userImage" src="" style="display:none;">
@@ -39,11 +48,9 @@
 
     <div class="controls" id="controlPanel" style="display:none;">
         <div class="slider-group">
-            <span>Thu nhỏ</span>
             <input type="range" id="zoomSlider" min="0.1" max="3" step="0.01" value="1">
-            <span>Phóng to</span>
         </div>
-        <p style="font-size: 12px; color: #888; margin: 5px 0 0 0;">Dùng ngón tay kéo ảnh để di chuyển</p>
+        <p style="font-size: 12px; color: #888;">Kéo ảnh để di chuyển, dùng thanh trượt để phóng to</p>
     </div>
 
     <div class="btn-group">
@@ -51,14 +58,14 @@
             CHỌN ẢNH TỪ MÁY
             <input type="file" id="fileInput" accept="image/*" style="display:none;">
         </label>
-        <button id="renderBtn" class="btn" style="display:none;">XUẤT ẢNH AVATAR</button>
-        <a id="downloadLink" class="btn" style="display:none;">TẢI ẢNH VỀ</a>
+        <button id="renderBtn" class="btn" style="display:none;">XUẤT ẢNH KẾT QUẢ</button>
     </div>
 
-    <img id="finalResult" alt="Kết quả">
-    <p id="iphoneTip" style="display:none; color: #d9534f; font-size: 13px; margin-top: 10px;">
-        💡 <b>Mẹo cho iPhone:</b> Nhấn giữ vào ảnh trên và chọn <b>"Thêm vào Ảnh"</b>.
-    </p>
+    <div class="result-container" id="resultContainer">
+        <img id="finalResult" alt="Avatar">
+        <div class="save-overlay"></div> 
+        <p class="tip">👉 NHẤN GIỮ VÀO ẢNH TRÊN<br>CHỌN "LƯU VÀO ẢNH"</p>
+    </div>
 </div>
 
 <canvas id="exportCanvas" width="2000" height="2000"></canvas>
@@ -70,13 +77,12 @@
     const workArea = document.getElementById('workArea');
     const renderBtn = document.getElementById('renderBtn');
     const finalResult = document.getElementById('finalResult');
-    const downloadLink = document.getElementById('downloadLink');
+    const resultContainer = document.getElementById('resultContainer');
     const exportCanvas = document.getElementById('exportCanvas');
     const controlPanel = document.getElementById('controlPanel');
 
     let scale = 1, posX = 0, posY = 0, isDragging = false, startX, startY;
 
-    // 1. Xử lý chọn ảnh
     fileInput.addEventListener('change', (e) => {
         const reader = new FileReader();
         reader.onload = (event) => {
@@ -84,45 +90,38 @@
             userImage.style.display = 'block';
             controlPanel.style.display = 'block';
             renderBtn.style.display = 'block';
-            finalResult.style.display = 'none';
-            downloadLink.style.display = 'none';
-            
-            // Reset vị trí
-            scale = 1; posX = 0; posY = 0;
-            zoomSlider.value = 1;
+            resultContainer.style.display = 'none';
+            scale = 1; posX = 0; posY = 0; zoomSlider.value = 1;
             updateTransform();
         };
         reader.readAsDataURL(e.target.files[0]);
     });
 
-    // 2. Xử lý Di chuyển (Drag) - Hỗ trợ cả Chuột và Cảm ứng
+    const getEventPos = (e) => ({
+        x: e.touches ? e.touches[0].clientX : e.clientX,
+        y: e.touches ? e.touches[0].clientY : e.clientY
+    });
+
     const startMove = (e) => {
         isDragging = true;
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-        startX = clientX - posX;
-        startY = clientY - posY;
+        const pos = getEventPos(e);
+        startX = pos.x - posX; startY = pos.y - posY;
     };
 
     const move = (e) => {
         if (!isDragging) return;
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-        posX = clientX - startX;
-        posY = clientY - startY;
+        const pos = getEventPos(e);
+        posX = pos.x - startX; posY = pos.y - startY;
         updateTransform();
     };
 
-    const endMove = () => isDragging = false;
-
     workArea.addEventListener('mousedown', startMove);
     window.addEventListener('mousemove', move);
-    window.addEventListener('mouseup', endMove);
+    window.addEventListener('mouseup', () => isDragging = false);
     workArea.addEventListener('touchstart', startMove);
     window.addEventListener('touchmove', move);
-    window.addEventListener('touchend', endMove);
+    window.addEventListener('touchend', () => isDragging = false);
 
-    // 3. Xử lý Phóng to (Zoom)
     zoomSlider.addEventListener('input', () => {
         scale = parseFloat(zoomSlider.value);
         updateTransform();
@@ -132,7 +131,6 @@
         userImage.style.transform = `translate(${posX}px, ${posY}px) scale(${scale})`;
     }
 
-    // 4. Xuất ảnh (Render)
     renderBtn.addEventListener('click', () => {
         const ctx = exportCanvas.getContext('2d');
         const frameImg = new Image();
@@ -140,30 +138,19 @@
 
         frameImg.onload = () => {
             ctx.clearRect(0, 0, 2000, 2000);
-            
-            // Tính toán tỉ lệ giữa màn hình và canvas 2000px
             const ratio = 2000 / workArea.offsetWidth;
-            
             ctx.save();
             ctx.translate(posX * ratio, posY * ratio);
             ctx.scale(scale * ratio, scale * ratio);
             ctx.drawImage(userImage, 0, 0);
             ctx.restore();
-
             ctx.drawImage(frameImg, 0, 0, 2000, 2000);
 
-            const dataURL = exportCanvas.toDataURL("image/png");
-            finalResult.src = dataURL;
-            finalResult.style.display = 'block';
-            downloadLink.href = dataURL;
-            downloadLink.download = "Avatar_Dalattourist_Custom.png";
-            downloadLink.style.display = 'block';
-            document.getElementById('iphoneTip').style.display = 'block';
-            
-            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+            finalResult.src = exportCanvas.toDataURL("image/png");
+            resultContainer.style.display = 'block';
+            setTimeout(() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }), 100);
         };
     });
 </script>
-
 </body>
 </html>
