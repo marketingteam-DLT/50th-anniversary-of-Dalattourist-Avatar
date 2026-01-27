@@ -1,43 +1,74 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avatar 50 Năm Dalattourist</title>
+    <style>
+        :root { --primary: #006837; }
+        body { font-family: sans-serif; text-align: center; background: #f0f2f5; padding: 10px; }
+        .container { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .preview-box { position: relative; width: 100%; aspect-ratio: 1/1; background: #ddd; margin: 20px 0; border-radius: 10px; overflow: hidden; }
+        #resultImage { width: 100%; display: block; }
+        canvas { display: none; }
+        .btn { background: var(--primary); color: white; padding: 15px 25px; border: none; border-radius: 30px; cursor: pointer; text-decoration: none; display: block; font-weight: bold; margin-top: 10px; }
+        input[type="file"] { margin: 20px 0; width: 100%; }
+        .tip { font-size: 13px; color: #666; margin-top: 15px; font-style: italic; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2 style="color:var(--primary)">50 NĂM DALATTOURIST</h2>
+    <div class="preview-box">
+        <img id="resultImage" src="AVATA-02.png" alt="Chưa có ảnh">
+    </div>
+    <input type="file" id="upload" accept="image/*">
+    <a id="downloadBtn" class="btn" style="display:none;">TẢI ẢNH VỀ MÁY</a>
+    <p class="tip">Nếu nút tải về không hoạt động (trên iPhone), hãy nhấn giữ vào ảnh phía trên và chọn "Lưu vào ảnh".</p>
+</div>
+
+<canvas id="canvas" width="2000" height="2000"></canvas>
+
 <script>
     const upload = document.getElementById('upload');
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
     const resultImage = document.getElementById('resultImage');
     const downloadBtn = document.getElementById('downloadBtn');
-
     const frameImg = new Image();
-    frameImg.crossOrigin = "anonymous"; // Tránh lỗi bảo mật ảnh
-    frameImg.src = 'AVATA-02.png'; 
+
+    // Tải khung trước để đảm bảo sẵn sàng
+    frameImg.src = 'AVATA-02.png';
 
     upload.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
         const reader = new FileReader();
-        reader.onload = function(event) {
+        reader.onload = function(f) {
             const userImg = new Image();
             userImg.onload = function() {
-                canvas.width = 2000;
-                canvas.height = 2000;
-
+                // Xử lý vẽ
+                ctx.clearRect(0, 0, 2000, 2000);
                 let size = Math.min(userImg.width, userImg.height);
-                let xOffset = (userImg.width - size) / 2;
-                let yOffset = (userImg.height - size) / 2;
-
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                ctx.drawImage(userImg, xOffset, yOffset, size, size, 0, 0, 2000, 2000);
+                let x = (userImg.width - size) / 2;
+                let y = (userImg.height - size) / 2;
+                
+                ctx.drawImage(userImg, x, y, size, size, 0, 0, 2000, 2000);
                 ctx.drawImage(frameImg, 0, 0, 2000, 2000);
 
-                const dataURL = canvas.toDataURL("image/png");
-                
-                // Hiển thị trực tiếp lên thẻ img để người dùng điện thoại có thể nhấn giữ và lưu
-                resultImage.src = dataURL;
-                
-                downloadBtn.href = dataURL;
-                downloadBtn.download = "Avatar-Dalattourist-50Nam.png";
+                // Xuất ảnh
+                const finalData = canvas.toDataURL("image/png");
+                resultImage.src = finalData;
+                downloadBtn.href = finalData;
+                downloadBtn.download = "Avatar_Dalattourist_50.png";
                 downloadBtn.style.display = "block";
-                
-                alert("Đã tạo xong! Nếu nút tải về không hoạt động, bạn hãy nhấn giữ vào ảnh phía trên để lưu trực tiếp vào máy.");
             };
-            userImg.src = event.target.result;
+            userImg.src = f.target.result;
         };
-        reader.readAsDataURL(e.target.files[0]);
+        reader.readAsDataURL(file);
     });
 </script>
+</body>
+</html>
