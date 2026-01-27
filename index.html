@@ -1,43 +1,3 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tạo Avatar 50 Năm Dalattourist</title>
-    <style>
-        :root { --primary-color: #006837; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; background: #e0e0e0; padding: 20px; color: #333; }
-        .container { max-width: 600px; margin: auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); }
-        h2 { color: var(--primary-color); margin-bottom: 10px; }
-        .preview-box { position: relative; width: 100%; aspect-ratio: 1/1; margin: 20px 0; background: #eee; border-radius: 10px; overflow: hidden; }
-        canvas { width: 100%; height: 100%; display: none; }
-        #resultImage { width: 100%; height: 100%; object-fit: contain; }
-        input[type="file"] { margin: 15px 0; }
-        .controls { display: flex; flex-direction: column; gap: 10px; align-items: center; }
-        .btn { background: var(--primary-color); color: white; padding: 12px 25px; border: none; border-radius: 50px; cursor: pointer; text-decoration: none; font-weight: bold; transition: 0.3s; }
-        .btn:hover { background: #004d29; transform: translateY(-2px); }
-        .note { font-size: 12px; color: #777; margin-top: 15px; }
-    </style>
-</head>
-<body>
-
-<div class="container">
-    <h2>50 NĂM DALATTOURIST</h2>
-    <p>Tự hào chặng đường 1976 - 2026</p>
-    
-    <div class="preview-box">
-        <img id="resultImage" src="AVATA-02.png" alt="Preview">
-        <canvas id="canvas" width="2000" height="2000"></canvas>
-    </div>
-
-    <div class="controls">
-        <input type="file" id="upload" accept="image/*">
-        <a id="downloadBtn" class="btn" style="display:none;">TẢI ẢNH AVATAR</a>
-    </div>
-    
-    <p class="note">* Lưu ý: Nên chọn ảnh rõ mặt, hệ thống sẽ tự động căn giữa.</p>
-</div>
-
 <script>
     const upload = document.getElementById('upload');
     const canvas = document.getElementById('canvas');
@@ -46,43 +6,38 @@
     const downloadBtn = document.getElementById('downloadBtn');
 
     const frameImg = new Image();
-    frameImg.src = 'AVATA-02.png'; // Đảm bảo file này nằm cùng thư mục trên GitHub
+    frameImg.crossOrigin = "anonymous"; // Tránh lỗi bảo mật ảnh
+    frameImg.src = 'AVATA-02.png'; 
 
     upload.addEventListener('change', function(e) {
         const reader = new FileReader();
         reader.onload = function(event) {
             const userImg = new Image();
             userImg.onload = function() {
-                // 1. Thiết lập kích thước canvas chuẩn 2000x2000 để ảnh cực kỳ sắc nét
                 canvas.width = 2000;
                 canvas.height = 2000;
 
-                // 2. Vẽ ảnh người dùng trước
-                // Tính toán để cắt ảnh vuông và căn giữa (Crop center)
-                let imgWidth = userImg.width;
-                let imgHeight = userImg.height;
-                let size = Math.min(imgWidth, imgHeight);
-                let xOffset = (imgWidth - size) / 2;
-                let yOffset = (imgHeight - size) / 2;
+                let size = Math.min(userImg.width, userImg.height);
+                let xOffset = (userImg.width - size) / 2;
+                let yOffset = (userImg.height - size) / 2;
 
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
                 ctx.drawImage(userImg, xOffset, yOffset, size, size, 0, 0, 2000, 2000);
-
-                // 3. Vẽ đè khung avatar lên trên
                 ctx.drawImage(frameImg, 0, 0, 2000, 2000);
 
-                // 4. Xuất kết quả ra ảnh hiển thị và nút tải
                 const dataURL = canvas.toDataURL("image/png");
+                
+                // Hiển thị trực tiếp lên thẻ img để người dùng điện thoại có thể nhấn giữ và lưu
                 resultImage.src = dataURL;
+                
                 downloadBtn.href = dataURL;
-                downloadBtn.download = "Avatar-50Nam-Dalattourist.png";
+                downloadBtn.download = "Avatar-Dalattourist-50Nam.png";
                 downloadBtn.style.display = "block";
+                
+                alert("Đã tạo xong! Nếu nút tải về không hoạt động, bạn hãy nhấn giữ vào ảnh phía trên để lưu trực tiếp vào máy.");
             };
             userImg.src = event.target.result;
         };
         reader.readAsDataURL(e.target.files[0]);
     });
 </script>
-
-</body>
-</html>
