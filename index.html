@@ -8,24 +8,29 @@
         :root { --primary: #006837; }
         body { font-family: -apple-system, system-ui, sans-serif; text-align: center; background: #f0f2f5; margin: 0; padding: 15px; }
         .container { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 20px; box-shadow: 0 8px 30px rgba(0,0,0,0.1); }
-        h2 { color: var(--primary); margin: 0 0 10px 0; font-size: 22px; }
+        h2 { color: var(--primary); margin: 0 0 15px 0; font-size: 20px; text-transform: uppercase; }
         
-        /* Khu vực chỉnh sửa */
-        .work-area { position: relative; width: 100%; aspect-ratio: 1/1; background: #eee; margin: 15px 0; border-radius: 12px; overflow: hidden; touch-action: none; border: 1px solid #ddd; }
-        #userImage { position: absolute; top: 0; left: 0; transform-origin: top left; cursor: move; }
+        /* Khu vực hiển thị ảnh căn chỉnh */
+        .work-area { position: relative; width: 100%; aspect-ratio: 1/1; background: #e9ecef; margin-bottom: 20px; border-radius: 12px; overflow: hidden; touch-action: none; border: 2px solid #ddd; }
+        #userImage { position: absolute; top: 0; left: 0; transform-origin: top left; cursor: move; display: none; }
         #frameOverlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; }
 
-        .controls { background: #f9f9f9; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #eee; }
-        input[type="range"] { width: 100%; accent-color: var(--primary); margin: 10px 0; }
+        /* Nút chọn ảnh to, rõ ràng */
+        .upload-box { margin-bottom: 20px; }
+        #fileInput { display: none; }
+        .btn-select { background: #007bff; color: white; padding: 15px; border-radius: 10px; display: block; font-weight: bold; cursor: pointer; text-decoration: none; }
 
-        .btn { background: var(--primary); color: white; padding: 15px; border: none; border-radius: 30px; cursor: pointer; text-decoration: none; font-weight: bold; font-size: 16px; display: block; width: 100%; box-sizing: border-box; margin-bottom: 10px; }
-        .btn-select { background: #f0f0f0; color: #333; border: 1px solid #ccc; }
+        /* Thanh điều khiển zoom */
+        .controls { background: #f8f9fa; padding: 15px; border-radius: 12px; margin-bottom: 15px; display: none; border: 1px solid #dee2e6; }
+        input[type="range"] { width: 100%; accent-color: var(--primary); margin-top: 10px; }
+
+        .btn-render { background: var(--primary); color: white; padding: 15px; border: none; border-radius: 30px; cursor: pointer; font-weight: bold; font-size: 16px; display: none; width: 100%; }
         
-        /* Khu vực kết quả */
-        #resultContainer { display: none; margin-top: 20px; padding: 10px; border: 2px dashed var(--primary); border-radius: 15px; }
-        #finalResult { width: 100%; border-radius: 10px; display: block; -webkit-touch-callout: default !important; }
+        /* Kết quả cuối cùng */
+        #resultContainer { display: none; margin-top: 25px; padding: 10px; border: 3px solid var(--primary); border-radius: 15px; background: #fff; }
+        #finalResult { width: 100%; border-radius: 8px; display: block; -webkit-touch-callout: default !important; }
         canvas { display: none; }
-        .tip { font-size: 14px; color: #d9534f; font-weight: bold; margin-top: 10px; }
+        .tip { font-size: 14px; color: #d9534f; font-weight: bold; margin-top: 10px; line-height: 1.5; }
     </style>
 </head>
 <body>
@@ -34,27 +39,31 @@
     <h2>50 NĂM DALATTOURIST</h2>
     
     <div class="work-area" id="workArea">
-        <img id="userImage" src="" style="display:none;">
+        <img id="userImage" src="">
         <img id="frameOverlay" src="AVATA-02.png">
     </div>
 
-    <div id="editTools" style="display:none;">
-        <div class="controls">
-            <label style="font-size:13px; color:#666;">Phóng to / Thu nhỏ</label>
-            <input type="range" id="zoomSlider" min="0.1" max="3" step="0.01" value="1">
-            <p style="font-size: 11px; color: #999; margin: 0;">Dùng tay kéo ảnh để căn chỉnh vị trí</p>
-        </div>
-        <button id="renderBtn" class="btn">XUẤT ẢNH AVATAR</button>
+    <div class="upload-box">
+        <label for="fileInput" class="btn-select">📸 BẤM VÀO ĐÂY ĐỂ CHỌN ẢNH</label>
+        <input type="file" id="fileInput" accept="image/*">
     </div>
 
-    <label class="btn btn-select">
-        CHỌN ẢNH TỪ MÁY
-        <input type="file" id="fileInput" accept="image/*" style="display:none;">
-    </label>
+    <div id="editTools">
+        <div class="controls" id="zoomBox">
+            <label style="font-size:13px; font-weight:bold;">PHÓNG TO / THU NHỎ</label>
+            <input type="range" id="zoomSlider" min="0.1" max="3" step="0.01" value="1">
+            <p style="font-size: 11px; color: #666; margin: 5px 0 0 0;">Dùng ngón tay kéo ảnh để di chuyển vào giữa khung tròn</p>
+        </div>
+        <button id="renderBtn" class="btn-render">HOÀN TẤT & XUẤT ẢNH</button>
+    </div>
 
     <div id="resultContainer">
         <img id="finalResult">
-        <p class="tip">👉 NHẤN GIỮ VÀO ẢNH TRÊN<br>CHỌN "LƯU VÀO ẢNH"</p>
+        <div class="tip">
+            👉 NHẤN GIỮ VÀO ẢNH TRÊN 2 GIÂY<br>
+            CHỌN "THÊM VÀO ẢNH" (iPHONE)<br>
+            HOẶC "TẢI HÌNH ẢNH XUỐNG" (ANDROID)
+        </div>
     </div>
 </div>
 
@@ -66,35 +75,43 @@
     const zoomSlider = document.getElementById('zoomSlider');
     const workArea = document.getElementById('workArea');
     const renderBtn = document.getElementById('renderBtn');
-    const editTools = document.getElementById('editTools');
+    const zoomBox = document.getElementById('zoomBox');
     const resultContainer = document.getElementById('resultContainer');
     const finalResult = document.getElementById('finalResult');
     const exportCanvas = document.getElementById('exportCanvas');
 
     let scale = 1, posX = 0, posY = 0, isDragging = false, startX, startY;
 
+    // Xử lý khi chọn file
     fileInput.onchange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
         const reader = new FileReader();
         reader.onload = (event) => {
             userImage.src = event.target.result;
             userImage.style.display = 'block';
-            editTools.style.display = 'block';
+            zoomBox.style.display = 'block';
+            renderBtn.style.display = 'block';
             resultContainer.style.display = 'none';
+            // Reset vị trí ảnh mới
             scale = 1; posX = 0; posY = 0; zoomSlider.value = 1;
             updateTransform();
         };
-        reader.readAsDataURL(e.target.files[0]);
+        reader.readAsDataURL(file);
     };
 
+    // Hàm lấy tọa độ cảm ứng/chuột
     const getPos = (e) => ({
         x: e.touches ? e.touches[0].clientX : e.clientX,
         y: e.touches ? e.touches[0].clientY : e.clientY
     });
 
     workArea.onmousedown = workArea.ontouchstart = (e) => {
+        if (userImage.src === "") return;
         isDragging = true;
         const p = getPos(e);
         startX = p.x - posX; startY = p.y - posY;
+        if(e.cancelable) e.preventDefault();
     };
 
     window.onmousemove = window.ontouchmove = (e) => {
@@ -107,8 +124,11 @@
     window.onmouseup = window.ontouchend = () => isDragging = false;
     zoomSlider.oninput = () => { scale = parseFloat(zoomSlider.value); updateTransform(); };
 
-    function updateTransform() { userImage.style.transform = `translate(${posX}px, ${posY}px) scale(${scale})`; }
+    function updateTransform() { 
+        userImage.style.transform = `translate(${posX}px, ${posY}px) scale(${scale})`; 
+    }
 
+    // Xuất ảnh chất lượng cao
     renderBtn.onclick = () => {
         const ctx = exportCanvas.getContext('2d');
         const frameImg = new Image();
@@ -122,9 +142,12 @@
             ctx.drawImage(userImage, 0, 0);
             ctx.restore();
             ctx.drawImage(frameImg, 0, 0, 2000, 2000);
+            
             finalResult.src = exportCanvas.toDataURL("image/png");
             resultContainer.style.display = 'block';
-            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+            setTimeout(() => {
+                window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+            }, 300);
         };
     };
 </script>
